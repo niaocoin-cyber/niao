@@ -84,7 +84,12 @@ async function processCallback() {
 
     setTimeout(() => {
       const parentUrl = localStorage.getItem('x_bind_return_url') || 'bounty.html';
-      const redirectUrl = `${parentUrl}?x_bound=1&username=${encodeURIComponent(username)}`;
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+      let finalUrl = parentUrl;
+      if (isMobile && !parentUrl.includes('bounty-mobile')) {
+        finalUrl = parentUrl.replace('bounty.html', 'bounty-mobile.html');
+      }
+      const redirectUrl = `${finalUrl}?x_bound=1&username=${encodeURIComponent(username)}`;
       window.location.href = redirectUrl;
     }, 1500);
   } else {
