@@ -1031,7 +1031,6 @@ async function submitMobileReply(taskId) {
 async function doTaskAction(e, taskId, action, url) {
   e.stopPropagation();
   if (!currentUser) { openModal('loginModal'); return; }
-  if (!currentUser.xAccount) { showToast('请先绑定 X 账号再参与社交任务', 'error'); openModal('bindXModal'); return; }
   if (url) window.open(url, '_blank');
   const completions = await DB.getCompletions(currentUser.wallet);
   if (completions[taskId]?.approved) { showToast('您已完成过此任务', 'error'); return; }
@@ -1490,7 +1489,6 @@ function consumeMobileBalance(amount) {
 
 async function doPublishSocial() {
   if (!currentUser) return;
-  if (!currentUser.xAccount) { showToast('请先绑定 X 账号再发布社交任务', 'error'); openModal('bindXModal'); return; }
   const desc = (document.getElementById('pubSocialDesc').value || '').trim();
   const tweetUrl = (document.getElementById('pubTweetUrl').value || '').trim();
   const profileUrl = (document.getElementById('pubProfileUrl').value || '').trim();

@@ -1937,7 +1937,6 @@ function consumeBalance(amount) {
 
 async function doPublishSocial(){
   if(!currentUser){showToast(t('Please login to post'), 'error');return}
-  if(!currentUser.xAccount){showToast(t('Please bind X to post'), 'error');openModal('bindXModal');return}
   const desc=document.getElementById('pubSocialDesc').value.trim();
   if(!desc){showToast(t('Please enter description'), 'error');return}
   const sel=[];document.querySelectorAll('.task-type-check').forEach(c=>{if(c.classList.contains('selected'))sel.push(c.dataset.action)});
