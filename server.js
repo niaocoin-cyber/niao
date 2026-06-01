@@ -4,6 +4,8 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
+const _enc = require('./_secrets');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -15,12 +17,12 @@ app.use(cors({
 }));
 app.use(express.static(__dirname));
 
-const TWITTER_CLIENT_ID = process.env.TWITTER_CLIENT_ID || '';
-const TWITTER_CLIENT_SECRET = process.env.TWITTER_CLIENT_SECRET || '';
+const TWITTER_CLIENT_ID = process.env.TWITTER_CLIENT_ID || _enc.TWITTER_CLIENT_ID || '';
+const TWITTER_CLIENT_SECRET = process.env.TWITTER_CLIENT_SECRET || _enc.TWITTER_CLIENT_SECRET || '';
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY || '';
 const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET || '';
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3001';
-const CALLBACK_URL = process.env.CALLBACK_URL || 'http://localhost:3001/api/auth/twitter/callback';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://www.niaocoin.xyz';
+const CALLBACK_URL = process.env.CALLBACK_URL || 'https://www.niaocoin.xyz/api/auth/twitter/callback';
 
 let stateStore = {};
 

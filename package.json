@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "build": "node build-secrets.js",
+    "prebuild": "echo 'Build script generates _secrets.js with encrypted credentials'"
   },
   "dependencies": {
     "express": "^4.18.2",
