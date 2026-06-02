@@ -258,13 +258,28 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text
 .submission-item-time{font-size:.7rem;color:var(--text-dim)}
 .submission-item-text{font-size:.85rem;color:var(--text);line-height:1.7;white-space:pre-wrap;word-break:break-word}
 
-/* === NEW: FAB menu === */
-.fab-menu{position:fixed;bottom:5.5rem;right:2rem;display:none;flex-direction:column;gap:.5rem;z-index:900;animation:fadeUp .2s ease}
-.fab-menu.show{display:flex}
-.fab-menu-item{display:flex;align-items:center;gap:.5rem;padding:.6rem 1.2rem;background:var(--bg2);border:1px solid var(--card-border);border-radius:12px;color:var(--text);font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .3s;font-family:'Noto Sans SC',sans-serif;box-shadow:0 4px 20px rgba(0,0,0,.4)}
-.fab-menu-item:hover{border-color:var(--gold);background:rgba(245,166,35,.08)}
-.fab-menu-item.bounty-item{border-color:rgba(155,89,182,.3);background:rgba(155,89,182,.08)}
-.fab-menu-item.bounty-item:hover{border-color:#9B59B6}
+/* === NEW: FAB menu (removed, simplified) === */
+/* === NEW: Task type selector === */
+.task-type-selector{display:flex;gap:1rem;margin-bottom:1.5rem}
+.task-type-option{flex:1;padding:1rem;border:2px solid var(--card-border);border-radius:12px;cursor:pointer;transition:all .3s;text-align:center;background:var(--bg3)}
+.task-type-option:hover{border-color:var(--gold);background:rgba(245,166,35,.08)}
+.task-type-option.active{border-color:var(--gold);background:rgba(245,166,35,.12)}
+.task-type-option svg{width:32px;height:32px;margin-bottom:.5rem}
+.task-type-option-title{font-weight:700;font-size:1rem}
+.task-type-option-desc{font-size:.8rem;color:var(--text-dim);margin-top:.3rem}
+
+/* === NEW: My tasks section in dashboard === */
+.my-tasks-section{margin-top:1.5rem}
+.my-tasks-title{font-weight:700;font-size:1.1rem;margin-bottom:1rem;color:var(--gold)}
+.my-tasks-grid{display:grid;grid-template-columns:1fr;gap:1rem}
+.my-task-card{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:1rem;transition:all .3s}
+.my-task-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+
+/* === Updated task card styles === */
+.task-card-link{color:var(--gold);text-decoration:none;font-size:.9rem;word-break:break-all;display:inline-block;margin-top:.5rem}
+.task-card-link:hover{text-decoration:underline}
+.task-participants-info{display:flex;gap:1rem;margin-top:.8rem;font-size:.85rem;color:var(--text-dim)}
+.task-participants-info span{display:flex;align-items:center;gap:.3rem}
 
 /* DASHBOARD */
 .dash-container{max-width:560px;margin:0 auto}
@@ -307,18 +322,28 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text
 .page-bg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
 .page-bg .dot{position:absolute;width:2px;height:2px;background:var(--gold);border-radius:50%;opacity:0;animation:twinkle var(--d,4s) var(--delay,0s) infinite}
 
+/* Bottom Navigation */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,12,.95);backdrop-filter:blur(20px);border-top:1px solid var(--card-border);display:none;padding:.5rem 0;z-index:1000}
+.bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:.2rem;background:none;border:none;color:var(--text-dim);cursor:pointer;font-family:'Noto Sans SC',sans-serif;padding:.3rem}
+.bottom-nav-item.active{color:var(--gold)}
+.bottom-nav-item svg{width:22px;height:22px}
+.bottom-nav-item span{font-size:.65rem;font-weight:700}
+
+/* Adjust for bottom nav */
+.main-wrap{padding-bottom:5rem}
+
 @media(max-width:640px){
-  .main-wrap{padding:1rem}
+  .main-wrap{padding:1rem;padding-bottom:5rem}
   .task-grid{grid-template-columns:1fr}
   .form-row{grid-template-columns:1fr}
   .top-bar{padding:.7rem 1rem}
   .top-bar .center-group{position:static;transform:none;gap:.8rem;flex:1;justify-content:center}
   .top-bar .page-tag{display:none}
   .top-bar .page-title{font-size:.85rem}
-  .top-bar .nav-tabs{margin-left:.8rem}
-  .top-bar .nav-tab{font-size:.75rem;padding:.3rem .6rem}
+  .top-bar .nav-tabs{display:none}
   .lb-list{width:100%}
   .profile-dropdown{right:-1rem;width:260px}
+  .bottom-nav{display:flex}
 }
 </style>
 </head>
@@ -403,18 +428,47 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text
             </div>
           </div>
         </div>
+        
+        <!-- My Tasks Section -->
+        <div class="my-tasks-section" id="myTasksSection">
+          <div class="my-tasks-title">我发布的任务</div>
+          <div class="my-tasks-grid" id="myTasksGrid"></div>
+          <div class="empty-state" id="myTasksEmpty" style="padding:2rem;display:none">
+            <div class="empty-icon" style="font-size:2rem;margin-bottom:1rem;opacity:.4">&#128221;</div>
+            <p>你还没有发布过任务</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <button class="bottom-nav-item active" data-tab="tasks" onclick="switchTab('tasks')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M9 12l2 2 4-4"/>
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+    </svg>
+    <span>任务</span>
+  </button>
+  <button class="bottom-nav-item" data-tab="leaderboard" onclick="switchTab('leaderboard')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+    </svg>
+    <span>排行榜</span>
+  </button>
+  <button class="bottom-nav-item" data-tab="dashboard" onclick="switchTab('dashboard')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+    <span>个人</span>
+  </button>
+</nav>
+
 <!-- FAB Publish -->
-<button class="fab-publish" id="fabPublish" title="发布任务" style="display:none">+</button>
-<!-- FAB Menu -->
-<div class="fab-menu" id="fabMenu">
-  <button class="fab-menu-item" id="fabPublishSocial" onclick="openPublishSocial()">&#128279; 发布社交任务</button>
-  <button class="fab-menu-item bounty-item" id="fabPublishBounty" onclick="openPublishBounty()">&#127942; 发布特殊悬赏</button>
-</div>
+<button class="fab-publish" id="fabPublish" title="发布任务" onclick="openPublishModal()">+</button>
 
 <!-- Login Modal -->
 <div class="modal-overlay login-modal" id="loginModal">
@@ -455,47 +509,81 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text
   </div>
 </div>
 
-<!-- Publish Social Task Modal -->
-<div class="modal-overlay" id="publishSocialModal">
-  <div class="modal" style="max-width:520px">
-    <button class="modal-close" onclick="closeModal('publishSocialModal')">&times;</button>
-    <h2 id="pubSocialTitle">发布社交任务</h2>
-    <div class="form-group">
-      <label id="pubSocialDescLabel">任务内容</label>
-      <textarea id="pubSocialDesc" placeholder="描述你的任务内容..." maxlength="500"></textarea>
-    </div>
-    <div class="form-group">
-      <label id="pubTaskTypeLabel">选择任务类型</label>
-      <div class="task-type-group" id="taskTypeGroup">
-        <div class="task-type-check" data-action="like" onclick="toggleTaskType(this)"><input type="checkbox"> <span id="pubLikeLabel">点赞</span></div>
-        <div class="task-type-check" data-action="comment" onclick="toggleTaskType(this)"><input type="checkbox"> <span id="pubCommentLabel">评论</span></div>
-        <div class="task-type-check" data-action="retweet" onclick="toggleTaskType(this)"><input type="checkbox"> <span id="pubRetweetLabel">转发</span></div>
-        <div class="task-type-check" data-action="follow" onclick="toggleTaskType(this)"><input type="checkbox"> <span id="pubFollowLabel">关注</span></div>
+<!-- Unified Publish Task Modal -->
+<div class="modal-overlay" id="publishModal">
+  <div class="modal" style="max-width:540px">
+    <button class="modal-close" onclick="closeModal('publishModal')">&times;</button>
+    <h2 id="pubTitle">发布任务</h2>
+    
+    <!-- Task Type Selector -->
+    <div class="task-type-selector">
+      <div class="task-type-option active" data-type="x-task" onclick="selectTaskType('x-task')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        <div class="task-type-option-title">X 任务</div>
+        <div class="task-type-option-desc">发布 X 平台任务</div>
+      </div>
+      <div class="task-type-option" data-type="other-task" onclick="selectTaskType('other-task')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div class="task-type-option-title">其他任务</div>
+        <div class="task-type-option-desc">发布其他类型任务</div>
       </div>
     </div>
-    <div class="form-group" id="tweetUrlGroup">
-      <label id="pubTweetUrlLabel">推文链接</label>
-      <input type="url" id="pubTweetUrl" placeholder="https://x.com/user/status/123456...">
-    </div>
-    <div class="form-group" id="profileUrlGroup" style="display:none">
-      <label id="pubProfileUrlLabel">X 账号主页链接</label>
-      <input type="url" id="pubProfileUrl" placeholder="https://x.com/username">
-    </div>
-    <div class="form-row">
+
+    <!-- X Task Form -->
+    <div id="xTaskForm">
       <div class="form-group">
-        <label id="pubParticipantsLabel">参与人数</label>
-        <input type="number" id="pubParticipants" placeholder="10" min="1" max="9999" oninput="calcTotal()">
+        <label>任务描述</label>
+        <textarea id="pubXDesc" placeholder="描述你的任务内容..." maxlength="500" oninput="updateCharCount('x')"></textarea>
+        <div class="submission-char-count" id="xCharCount">0/500</div>
       </div>
       <div class="form-group">
-        <label id="pubNiaoPerPersonLabel">每人 NIAO 数量</label>
-        <input type="number" id="pubNiaoPerPerson" placeholder="50" min="1" oninput="calcTotal()">
+        <label>任务链接</label>
+        <input type="url" id="pubXUrl" placeholder="https://x.com/user/status/123456...">
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>参与人数</label>
+          <input type="number" id="pubXParticipants" placeholder="10" min="1" max="9999" oninput="calcTotalX()">
+        </div>
+        <div class="form-group">
+          <label>每人 NIAO</label>
+          <input type="number" id="pubXPerPerson" placeholder="50" min="1" oninput="calcTotalX()">
+        </div>
+      </div>
+      <div class="calc-total">
+        <span class="calc-label">任务总 NIAO</span>
+        <span class="calc-value" id="calcTotalXValue">0 NIAO</span>
+      </div>
+      <button class="publish-submit" onclick="doPublishXTask()">发布任务</button>
     </div>
-    <div class="calc-total">
-      <span class="calc-label" id="pubTotalLabel">任务总 NIAO 数量</span>
-      <span class="calc-value" id="calcTotalValue">0 NIAO</span>
+
+    <!-- Other Task Form -->
+    <div id="otherTaskForm" style="display:none">
+      <div class="form-group">
+        <label>任务描述</label>
+        <textarea id="pubOtherDesc" placeholder="描述你的任务内容..." maxlength="500" oninput="updateCharCount('other')"></textarea>
+        <div class="submission-char-count" id="otherCharCount">0/500</div>
+      </div>
+      <div class="form-group">
+        <label>任务链接 (可选)</label>
+        <input type="url" id="pubOtherUrl" placeholder="https://example.com...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>参与人数</label>
+          <input type="number" id="pubOtherParticipants" placeholder="10" min="1" max="9999" oninput="calcTotalOther()">
+        </div>
+        <div class="form-group">
+          <label>每人 NIAO</label>
+          <input type="number" id="pubOtherPerPerson" placeholder="50" min="1" oninput="calcTotalOther()">
+        </div>
+      </div>
+      <div class="calc-total">
+        <span class="calc-label">任务总 NIAO</span>
+        <span class="calc-value" id="calcTotalOtherValue">0 NIAO</span>
+      </div>
+      <button class="publish-submit" onclick="doPublishOtherTask()">发布任务</button>
     </div>
-    <button class="publish-submit" onclick="doPublishSocial()" id="pubSocialSubmit">发布任务</button>
   </div>
 </div>
 
@@ -1664,7 +1752,22 @@ window.debugFixUserData = async function() {
 
 function initBg(){const bg=document.getElementById('pageBg');for(let i=0;i<40;i++){const d=document.createElement('div');d.className='dot';d.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${3+Math.random()*5}s;--delay:${Math.random()*5}s`;bg.appendChild(d)}}
 
-function initTabs(){document.querySelectorAll('.nav-tab').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById('panel-'+tab.dataset.tab).classList.add('active');if(tab.dataset.tab==='dashboard')updateDashboard();if(tab.dataset.tab==='leaderboard')renderLeaderboard()})})}
+function switchTab(tab){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav-item').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  
+  document.querySelectorAll('[data-tab="'+tab+'"]').forEach(b=>b.classList.add('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  
+  if(tab==='dashboard')updateDashboard();
+  if(tab==='leaderboard')renderLeaderboard();
+}
+function initTabs(){
+  document.querySelectorAll('.nav-tab').forEach(tab=>{
+    tab.addEventListener('click',()=>switchTab(tab.dataset.tab));
+  });
+}
 
 function updateStaticTexts(){
   // Update navigation tabs
@@ -1813,7 +1916,7 @@ function renderUserArea(){
   const a=document.getElementById('userArea'),fab=document.getElementById('fabPublish');
   if(currentUser){
     a.innerHTML=`<button class="user-avatar-btn" onclick="toggleProfile()"><img src="${currentUser.avatar}" alt=""><span class="nick">${currentUser.nick}</span></button><div class="profile-dropdown" id="profileDrop"></div>`;
-    renderProfileDD();fab.style.display='flex';fab.onclick=toggleFab;
+    renderProfileDD();fab.style.display='flex';fab.onclick=openPublishModal;
   }else{a.innerHTML=`<button class="login-btn" onclick="openModal('loginModal')">${t('Login')}</button>`;fab.style.display='none'}
 }
 function renderProfileDD(){
@@ -1828,9 +1931,116 @@ function renderProfileDD(){
 function toggleProfile(){const d=document.getElementById('profileDrop');if(d)d.classList.toggle('show')}
 
 /* ── FAB ── */
-function toggleFab(){fabOpen=!fabOpen;const m=document.getElementById('fabMenu'),b=document.getElementById('fabPublish');if(fabOpen){m.classList.add('show');b.textContent='×';b.style.transform='rotate(45deg)'}else{m.classList.remove('show');b.textContent='+';b.style.transform=''}}
-function openPublishSocial(){toggleFab();['pubSocialDesc','pubTweetUrl','pubProfileUrl','pubParticipants','pubNiaoPerPerson'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});document.getElementById('calcTotalValue').textContent='0 NIAO';document.querySelectorAll('.task-type-check').forEach(c=>{c.classList.remove('selected');c.querySelector('input').checked=false});updatePublishFormVis();openModal('publishSocialModal')}
-function openPublishBounty(){toggleFab();openModal('publishBountyModal')}
+function openPublishModal(){
+  // 重置表单
+  ['pubXDesc','pubXUrl','pubXParticipants','pubXPerPerson','pubOtherDesc','pubOtherUrl','pubOtherParticipants','pubOtherPerPerson'].forEach(id=>{
+    const e=document.getElementById(id);if(e)e.value='';
+  });
+  document.getElementById('calcTotalXValue').textContent='0 NIAO';
+  document.getElementById('calcTotalOtherValue').textContent='0 NIAO';
+  document.getElementById('xCharCount').textContent='0/500';
+  document.getElementById('otherCharCount').textContent='0/500';
+  // 默认选择X任务
+  selectTaskType('x-task');
+  openModal('publishModal');
+}
+
+/* ── NEW TASK TYPE SELECTOR ── */
+function selectTaskType(type){
+  document.querySelectorAll('.task-type-option').forEach(el=>el.classList.remove('active'));
+  document.querySelector('.task-type-option[data-type="'+type+'"]').classList.add('active');
+  document.getElementById('xTaskForm').style.display=type==='x-task'?'block':'none';
+  document.getElementById('otherTaskForm').style.display=type==='other-task'?'block':'none';
+}
+
+function updateCharCount(type){
+  const el=document.getElementById(type==='x'?'pubXDesc':'pubOtherDesc');
+  const cnt=document.getElementById(type==='x'?'xCharCount':'otherCharCount');
+  if(el&&cnt)cnt.textContent=el.value.length+'/500';
+}
+
+function calcTotalX(){
+  const p=parseInt(document.getElementById('pubXParticipants').value)||0;
+  const n=parseInt(document.getElementById('pubXPerPerson').value)||0;
+  document.getElementById('calcTotalXValue').textContent=(p*n).toLocaleString()+' NIAO';
+}
+
+function calcTotalOther(){
+  const p=parseInt(document.getElementById('pubOtherParticipants').value)||0;
+  const n=parseInt(document.getElementById('pubOtherPerPerson').value)||0;
+  document.getElementById('calcTotalOtherValue').textContent=(p*n).toLocaleString()+' NIAO';
+}
+
+/* ── PUBLISH X TASK ── */
+async function doPublishXTask(){
+  if(!currentUser){showToast(t('Please login to post'),'error');return}
+  const desc=document.getElementById('pubXDesc').value.trim();
+  if(!desc){showToast(t('Please enter description'),'error');return}
+  const url=document.getElementById('pubXUrl').value.trim();
+  if(!url){showToast('请输入任务链接','error');return}
+  const pp=parseInt(document.getElementById('pubXParticipants').value)||0;
+  const np=parseInt(document.getElementById('pubXPerPerson').value)||0;
+  if(pp<1||np<1){showToast(t('Please set participants and reward'),'error');return}
+  const total=pp*np;
+  if(total>currentUser.balance){showToast(t('Insufficient NIAO')+total+t('Current balance')+currentUser.balance,'error');return}
+  
+  if(!consumeBalance(total)){showToast(t('Insufficient balance'),'error');return}
+  
+  await DB.saveUser(currentUser);
+  await DB.recordSpend(currentUser.wallet,total,currentUser);
+  const newTask={
+    type:'x-task',
+    title:desc.substring(0,30)+(desc.length>30?'...':''),
+    desc,
+    link:url,
+    participants:pp,
+    niaoPerPerson:np,
+    totalNiao:total,
+    publisher:{nick:currentUser.nick,avatar:currentUser.avatar,wallet:currentUser.wallet,xAccount:currentUser.xAccount},
+    accepted:0,
+    createdAt:Date.now()
+  };
+  await DB.saveTask(newTask);
+  await loadTasks();
+  closeModal('publishModal');
+  renderTasks();renderUserArea();updateDashboard();
+  showToast(t('Published successfully'),'success');
+}
+
+/* ── PUBLISH OTHER TASK ── */
+async function doPublishOtherTask(){
+  if(!currentUser){showToast(t('Please login to post'),'error');return}
+  const desc=document.getElementById('pubOtherDesc').value.trim();
+  if(!desc){showToast(t('Please enter description'),'error');return}
+  const url=document.getElementById('pubOtherUrl').value.trim();
+  const pp=parseInt(document.getElementById('pubOtherParticipants').value)||0;
+  const np=parseInt(document.getElementById('pubOtherPerPerson').value)||0;
+  if(pp<1||np<1){showToast(t('Please set participants and reward'),'error');return}
+  const total=pp*np;
+  if(total>currentUser.balance){showToast(t('Insufficient NIAO')+total+t('Current balance')+currentUser.balance,'error');return}
+  
+  if(!consumeBalance(total)){showToast(t('Insufficient balance'),'error');return}
+  
+  await DB.saveUser(currentUser);
+  await DB.recordSpend(currentUser.wallet,total,currentUser);
+  const newTask={
+    type:'other-task',
+    title:desc.substring(0,30)+(desc.length>30?'...':''),
+    desc,
+    link:url,
+    participants:pp,
+    niaoPerPerson:np,
+    totalNiao:total,
+    publisher:{nick:currentUser.nick,avatar:currentUser.avatar,wallet:currentUser.wallet,xAccount:currentUser.xAccount},
+    accepted:0,
+    createdAt:Date.now()
+  };
+  await DB.saveTask(newTask);
+  await loadTasks();
+  closeModal('publishModal');
+  renderTasks();renderUserArea();updateDashboard();
+  showToast(t('Published successfully'),'success');
+}
 
 /* ── MODALS ── */
 
@@ -2128,7 +2338,35 @@ async function renderTasks(){
       </div>`;
     }
     
-    const tags=task.actions.map(a=>`<span class="task-action-tag ${cls[a]}">${labels[a]}</span>`).join('');
+    // 新任务类型处理
+    if(task.type==='x-task'||task.type==='other-task'){
+      const taskIcon=task.type==='x-task'?
+        `<svg style="width:20px;height:20px;display:inline-block;vertical-align:middle;margin-right:.3rem" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>`:'';
+      
+      return`<div class="task-card" onclick="openTaskDetail('${task.id}')">
+        <div class="task-header">
+          <div class="task-title">${taskIcon}${esc(task.title)}</div>
+          <div class="task-reward">${formatNiaoAmount(task.niaoPerPerson)}<span class="coin">/${t('person')}</span></div>
+        </div>
+        <div class="task-meta">
+          <span style="color:var(--gold);font-weight:700">${task.type==='x-task'?'X任务':'其他任务'}</span>
+        </div>
+        <div class="task-desc">${esc(task.desc)}</div>
+        ${task.link?`<a href="${esc(task.link)}" target="_blank" onclick="event.stopPropagation()" class="task-card-link">${esc(task.link)}</a>`:''}
+        <div class="task-participants-info">
+          <span>参与人数: ${task.accepted}/${task.participants}</span>
+          <span>剩余: ${Math.max(0,task.participants-task.accepted)}人</span>
+        </div>
+        <div class="task-meta"><span>&#128338; ${getTimeAgo(task.createdAt)}</span></div>
+        <div class="task-footer">
+          <div class="task-publisher"><img src="${task.publisher.avatar}">${esc(task.publisher.nick)}</div>
+          <span class="task-status ${full?'status-full':'status-open'}">${full?t('Full'):t('In Progress')}</span>
+        </div>
+      </div>`;
+    }
+    
+    // 保持原有任务类型显示
+    const tags=(task.actions||[]).map(a=>`<span class="task-action-tag ${cls[a]}">${labels[a]}</span>`).join('');
     const sp=task.type==='bounty'?'bounty-special':'';
     const bb=task.type==='bounty'?`<div class="bounty-badge">&#127942; ${t('Special Bounty')}</div>`:'';
     return`<div class="task-card ${sp}" onclick="openTaskDetail('${task.id}')">${bb}
@@ -2244,6 +2482,43 @@ async function openTaskDetail(taskId){
     return;
   }
   
+  // 新任务类型处理
+  if(t.type==='x-task'||t.type==='other-task'){
+    const taskIcon=t.type==='x-task'?
+      `<svg style="width:20px;height:20px;display:inline-block;vertical-align:middle;margin-right:.3rem" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>`:'';
+    
+    h+=`<h2 style="margin-top:.5rem">${taskIcon}${esc(t.title)}</h2>`;
+    h+=`<div class="detail-info-row">
+      <span>发帖人: ${esc(t.publisher.nick)}</span>
+      <span>&#128101; ${t.accepted}/${t.participants}</span>
+      <span>剩余: ${Math.max(0,t.participants-t.accepted)}人</span>
+      <span>&#128176; ${formatNiaoAmount(t.niaoPerPerson)}/${t('person')}</span>
+    </div>`;
+    h+=`<div style="background:var(--bg3);border:1px solid var(--card-border);border-radius:10px;padding:.8rem 1rem;margin-bottom:1rem"><div style="font-size:.78rem;color:var(--gold);font-weight:700;margin-bottom:.3rem">任务描述</div><div style="font-size:.85rem;color:var(--text);white-space:pre-wrap">${esc(t.desc)}</div></div>`;
+    if(t.link)h+=`<div style="margin-bottom:1rem"><div style="font-size:.78rem;color:var(--gold);font-weight:700;margin-bottom:.3rem">任务链接</div><a href="${esc(t.link)}" target="_blank" style="color:var(--gold);word-break:break-all;text-decoration:underline">${esc(t.link)}</a></div>`;
+    
+    // 检查完成状态
+    const alreadyCompleted=ck&&ck.completed;
+    if(currentUser&&!isOwn){
+      if(alreadyCompleted){
+        h+=`<div class="completion-status completion-done">&#10003; 任务已完成 · 奖励 <span class="completion-reward">${formatNiaoAmount(t.niaoPerPerson)}</span></div>`;
+      }else if(full){
+        h+=`<div class="completion-status completion-pending">任务人数已满</div>`;
+      }else{
+        h+=`<div class="detail-actions">
+          <a href="${esc(t.link)}" target="_blank" class="detail-action-btn btn-retweet" style="text-decoration:none;display:inline-block">🔗 前往任务链接</a>
+          <button class="detail-action-btn btn-follow" onclick="completeTask('${t.id}')" style="background:var(--green);color:#000">✅ 确认完成</button>
+        </div>`;
+      }
+    }
+    
+    h+=`<div style="margin-top:1.2rem;padding-top:.8rem;border-top:1px solid var(--card-border);display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--text-dim)"><img src="${t.publisher.avatar}" style="width:24px;height:24px;border-radius:50%;border:1px solid var(--card-border)">发帖人: ${esc(t.publisher.nick)}</div>`;
+    document.getElementById('taskDetailContent').innerHTML=h;
+    openModal('taskDetailModal');
+    return;
+  }
+  
+  // 保持原有任务类型处理
   if(t.type==='bounty')h+=`<div class="bounty-badge">&#127942; ${t('Special Bounty')}</div>`;
   h+=`<h2 style="margin-top:.5rem">${esc(t.title)}</h2>`;
   h+=`<div class="detail-info-row"><span>&#128101; ${t.accepted}/${t.participants}</span><span>&#128176; ${formatNiaoAmount(t.niaoPerPerson)}/${t('person')}</span><span>&#128176; ${t('Total')} ${formatNiaoAmount(t.totalNiao)}</span><span>&#128338; ${getTimeAgo(t.createdAt)}</span></div>`;
@@ -2287,6 +2562,44 @@ async function openTaskDetail(taskId){
   if(t.type==='bounty'){
     loadBountyReplies(taskId);
   }
+}
+
+/* ── 完成新任务 ── */
+async function completeTask(taskId){
+  if(!currentUser){showToast(t('Please login first'),'error');return;}
+  
+  const t=allTasks.find(x=>x.id===taskId);
+  if(!t)return;
+  
+  const isOwn=t.publisher.wallet===currentUser.wallet;
+  if(isOwn){showToast('不能完成自己发布的任务','error');return;}
+  
+  if(t.accepted>=t.participants){showToast('任务人数已满','error');return;}
+  
+  const comps=await DB.getCompletions(currentUser.wallet);
+  const ck=(comps&&comps[currentUser.wallet])?.[taskId]||{};
+  if(ck.completed){showToast('你已经完成过这个任务','error');return;}
+  
+  // 标记任务完成
+  await DB.saveCompletion(currentUser.wallet,taskId,{completed:true,time:Date.now()});
+  
+  // 更新任务接受数
+  t.accepted+=1;
+  await DB.saveTask(t);
+  
+  // 发放奖励（可提现）
+  currentUser.withdrawableBalance=(currentUser.withdrawableBalance||0)+t.niaoPerPerson;
+  currentUser.balance=(currentUser.nonWithdrawableBalance||0)+(currentUser.withdrawableBalance||0);
+  await DB.saveUser(currentUser);
+  
+  // 记录收益
+  await DB.recordEarn(currentUser.wallet,t.niaoPerPerson,currentUser);
+  
+  showToast(t('Congratulations! You got')+' '+formatNiaoAmount(t.niaoPerPerson),'success');
+  closeModal('taskDetailModal');
+  renderTasks();
+  renderUserArea();
+  updateDashboard();
 }
 
 async function loadBountyReplies(taskId){
@@ -2663,6 +2976,45 @@ function updateDashboard(){
   document.getElementById('dashNonWithdrawable').textContent=formatNiaoAmount(currentUser.nonWithdrawableBalance);
   document.getElementById('dashWithdrawable').textContent=formatNiaoAmount(currentUser.withdrawableBalance);
   const w=document.getElementById('withdrawAvail');if(w)w.textContent=formatNiaoAmount(currentUser.withdrawableBalance);
+  
+  // 渲染用户发布的任务
+  renderMyTasks();
+}
+
+function renderMyTasks(){
+  const grid=document.getElementById('myTasksGrid');
+  const empty=document.getElementById('myTasksEmpty');
+  if(!grid)return;
+  
+  // 筛选出当前用户发布的任务
+  const myTasks=allTasks.filter(t=>t.publisher&&t.publisher.wallet===currentUser.wallet);
+  
+  if(myTasks.length===0){
+    grid.innerHTML='';
+    if(empty)empty.style.display='block';
+    return;
+  }
+  if(empty)empty.style.display='none';
+  
+  grid.innerHTML=myTasks.map(t=>{
+    const taskIcon=t.type==='x-task'?
+      `<svg style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:.3rem" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>`:'';
+    const taskType=t.type==='x-task'?'X任务':(t.type==='other-task'?'其他任务':t.type);
+    return `
+      <div class="my-task-card" onclick="openTaskDetail('${t.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+          <div style="font-weight:700;color:var(--gold)">${taskIcon}${taskType}</div>
+          <div style="font-size:.75rem;color:var(--text-dim)">${getTimeAgo(t.createdAt)}</div>
+        </div>
+        <div style="font-weight:700;margin-bottom:.5rem">${esc(t.title)}</div>
+        <div style="font-size:.85rem;color:var(--text-dim);margin-bottom:.5rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(t.desc)}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:.8rem">
+          <span>参与人数: ${t.accepted}/${t.participants}</span>
+          <span style="color:var(--gold)">${formatNiaoAmount(t.niaoPerPerson)}/人</span>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 async function claimPending(){if(!currentUser)return;if(currentUser.pending<=0){alert('没有待领取的 NIAO');return}const a=currentUser.pending;currentUser.balance+=a;currentUser.pending=0;await DB.saveUser(currentUser);updateDashboard();renderUserArea();alert('成功领取 '+a+' NIAO！')}
 function editNickname(){
@@ -2737,40 +3089,39 @@ function editAvatar(){
     console.log('Uploading avatar:', file.name, file.size);
     
     try {
-      // 使用 Firebase Storage 存储头像
-      const storageRef = window.storage.ref();
-      const avatarRef = storageRef.child('avatars/' + currentUser.id + '/' + Date.now() + '_' + file.name);
+      // 使用 FileReader 读取图片为 base64
+      const reader = new FileReader();
+      reader.onload = async function(event) {
+        const base64 = event.target.result;
+        
+        // 更新用户头像（base64直接存储）
+        currentUser.avatar = base64;
+        await DB.saveUser(currentUser);
+        
+        console.log('Avatar saved to database');
+        
+        // 强制刷新头像
+        renderUserArea();
+        updateDashboard();
+        
+        // 强制刷新头像图片（清除缓存）
+        const dashAvatar = document.getElementById('dashAvatar');
+        if(dashAvatar){
+          dashAvatar.src = base64;
+        }
+        
+        const navAvatar = document.querySelector('.user-avatar-btn img');
+        if(navAvatar){
+          navAvatar.src = base64;
+        }
+        
+        showToast('头像修改成功！', 'success');
+      };
+      reader.onerror = function() {
+        showToast('头像上传失败', 'error');
+      };
+      reader.readAsDataURL(file);
       
-      // 上传文件
-      const snapshot = await avatarRef.put(file);
-      console.log('Avatar uploaded, bytes transferred:', snapshot.bytesTransferred);
-      
-      // 获取下载URL
-      const downloadURL = await snapshot.ref.getDownloadURL();
-      console.log('Avatar download URL:', downloadURL);
-      
-      // 更新用户头像
-      currentUser.avatar = downloadURL;
-      await DB.saveUser(currentUser);
-      
-      console.log('Avatar saved to database');
-      
-      // 强制刷新头像
-      renderUserArea();
-      updateDashboard();
-      
-      // 强制刷新头像图片（清除缓存）
-      const dashAvatar = document.getElementById('dashAvatar');
-      if(dashAvatar){
-        dashAvatar.src = downloadURL + '?' + Date.now();
-      }
-      
-      const navAvatar = document.querySelector('.user-avatar-btn img');
-      if(navAvatar){
-        navAvatar.src = downloadURL + '?' + Date.now();
-      }
-      
-      showToast('头像修改成功！', 'success');
     } catch (error) {
       console.error('Failed to upload avatar:', error);
       showToast('头像上传失败：' + error.message, 'error');
@@ -2785,90 +3136,59 @@ async function doBindX(){
   }
 
   try {
-    localStorage.setItem('x_bind_return_url', window.location.href);
-    showToast('正在连接 X 授权服务...', 'info');
-
-    const apiBase = window.location.protocol + '//' + window.location.host;
-    const response = await fetch(apiBase + '/api/auth/twitter', {
-      method: 'GET',
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to get Twitter auth URL');
-    }
-
-    const { redirectUrl } = await response.json();
-    console.log('Got Twitter auth URL:', redirectUrl);
-
-    const width = 600;
-    const height = 700;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-
-    const popupWindow = window.open(
-      redirectUrl,
-      'Twitter OAuth',
-      `width=${width},height=${height},left=${left},top=${top},popup=yes`
-    );
-
-    if (!popupWindow) {
-      showToast('请允许弹出窗口以完成 X 授权', 'error');
-      return;
-    }
-
-    showToast('请在弹出窗口中完成 X 授权...', 'info');
-
-    let pollTimer;
-    let messageHandler;
-
-    const handleSuccess = async (username) => {
-      clearInterval(pollTimer);
-      window.removeEventListener('message', messageHandler);
-
-      console.log('✅ X 账号绑定成功！', { username });
+    // 创建一个弹窗让用户输入X用户名（模拟授权）
+    const modal = document.createElement('div');
+    modal.className = 'custom-modal-overlay';
+    modal.innerHTML = `
+      <div class="custom-modal" style="background:var(--bg2);border:1px solid var(--card-border);border-radius:16px;padding:2rem;max-width:400px;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10001;text-align:center">
+        <h3 style="color:var(--gold);margin-bottom:1rem">绑定 X 账号</h3>
+        <p style="color:var(--text-dim);margin-bottom:1rem;font-size:.9rem">请输入您的 X (Twitter) 用户名</p>
+        <input type="text" id="xUsernameInput" placeholder="@username" style="width:100%;padding:.8rem;border:1px solid var(--card-border);border-radius:8px;background:var(--bg);color:var(--text);margin-bottom:1rem">
+        <div style="display:flex;gap:.5rem;justify-content:center">
+          <button onclick="cancelBindX()" style="padding:.6rem 1.2rem;border:1px solid var(--card-border);border-radius:8px;background:var(--bg);color:var(--text);cursor:pointer">取消</button>
+          <button onclick="confirmBindX()" style="padding:.6rem 1.2rem;border:none;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#000;font-weight:700;cursor:pointer">确认绑定</button>
+        </div>
+      </div>
+    `;
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000';
+    document.body.appendChild(modal);
+    
+    document.getElementById('xUsernameInput').focus();
+    
+    // 绑定全局函数
+    window.cancelBindX = function() {
+      modal.remove();
+      closeModal('bindXModal');
+    };
+    
+    window.confirmBindX = async function() {
+      const input = document.getElementById('xUsernameInput');
+      let username = input.value.trim();
+      
+      if(!username) {
+        showToast('请输入X用户名', 'error');
+        return;
+      }
+      
+      // 去掉开头的@
+      if(username.startsWith('@')) {
+        username = username.substring(1);
+      }
+      
+      // 保存用户名
       currentUser.xAccount = username;
       await DB.saveUser(currentUser);
-
-      if (!popupWindow.closed) {
-        popupWindow.close();
-      }
-
+      
+      // 关闭弹窗
+      modal.remove();
+      closeModal('bindXModal');
+      
+      // 更新UI
       renderUserArea();
       updateDashboard();
-      closeModal('bindXModal');
-
-      showToast(t('X account bound') + '@' + username + t('X bound success'), 'success');
+      
+      showToast('X 账号绑定成功！@' + username, 'success');
     };
-
-    messageHandler = async (event) => {
-      if (event.data && event.data.type === 'X_BIND_SUCCESS') {
-        await handleSuccess(event.data.username);
-      }
-    };
-    window.addEventListener('message', messageHandler);
-
-    pollTimer = setInterval(async () => {
-      try {
-        if (popupWindow.closed) {
-          clearInterval(pollTimer);
-          window.removeEventListener('message', messageHandler);
-          showToast('授权已取消', 'info');
-          return;
-        }
-
-        const currentUrl = popupWindow.location.href;
-        if (currentUrl.includes('x_bound=1')) {
-          const urlParams = new URL(currentUrl).searchParams;
-          const twitterUsername = urlParams.get('username');
-          if (twitterUsername) {
-            await handleSuccess(decodeURIComponent(twitterUsername));
-          }
-        }
-      } catch (e) {
-        // Ignore cross-origin errors during polling
-      }
-    }, 500);
 
   } catch (error) {
     console.error('绑定失败:', error);
@@ -2946,85 +3266,48 @@ async function doRecharge() {
 
   try {
     let walletProvider;
-    if (currentUser.walletType === 'okx' && window.okxwallet) {
-      walletProvider = window.okxwallet;
-    } else if (currentUser.walletType === 'metamask' && window.ethereum) {
-      walletProvider = window.ethereum;
-    } else if (currentUser.walletType === 'trust' && window.trustwallet) {
-      walletProvider = window.trustwallet;
-    } else if (window.ethereum) {
-      walletProvider = window.ethereum;
-    } else if (window.okxwallet) {
-      walletProvider = window.okxwallet;
-    } else {
-      showToast(t('No wallet detected'), 'error');
-      return;
-    }
+    if (currentUser.walletType === 'okx' && window.okxwallet) walletProvider = window.okxwallet;
+    else if (currentUser.walletType === 'trust' && window.trustwallet) walletProvider = window.trustwallet;
+    else if (window.ethereum) walletProvider = window.ethereum;
+    else if (window.okxwallet) walletProvider = window.okxwallet;
+    else { showToast('请先连接钱包', 'error'); return; }
 
-    showToast(t('Detecting network...'), 'info');
+    showToast('切换到 BSC...', 'info');
     const switched = await switchToBSC(walletProvider);
-    if (!switched) {
-      showToast(t('Network switch failed'), 'error');
-      return;
-    }
+    if (!switched) { showToast('请切换到 BSC 网络', 'error'); return; }
 
     const provider = new ethers.BrowserProvider(walletProvider);
     const signer = await provider.getSigner();
     const userAddress = await signer.getAddress();
 
     const transferAmount = ethers.parseUnits(amount.toString(), 18);
-
     const recipientHex = RECIPIENT_ADDRESS.substring(2).padStart(64, '0');
     const amountHex = ethers.toBeHex(transferAmount).substring(2).padStart(64, '0');
-    
-    const txData = {
-      from: userAddress,
-      to: TOKEN_CONTRACT,
-      data: '0xa9059cbb' + recipientHex + amountHex
-    };
+    const txData = { from: userAddress, to: TOKEN_CONTRACT, data: '0xa9059cbb' + recipientHex + amountHex };
 
-    showToast(t('Opening wallet...'), 'info');
+    showToast('打开钱包...', 'info');
+    const txHash = await walletProvider.request({ method: 'eth_sendTransaction', params: [txData] });
 
-    const txHash = await walletProvider.request({
-      method: 'eth_sendTransaction',
-      params: [txData]
-    });
-
-    // 交易提交后立即更新UI，不等待确认
-    showToast(t('Transaction submitted'), 'info');
-    
-    // 立即更新本地余额（乐观更新）
-    currentUser = ensureCompleteUserData(currentUser);
     currentUser.withdrawableBalance = (currentUser.withdrawableBalance || 0) + amount;
     currentUser.balance = (currentUser.balance || 0) + amount;
     await DB.saveUser(currentUser);
-    
-    // 立即关闭窗口并更新UI
+    localStorage.setItem('cachedUser', JSON.stringify(currentUser));
+
     closeModal('rechargeModal');
     renderUserArea();
     updateDashboard();
-    showToast(t('Recharge processing') + formatNiaoAmount(amount) + ' ' + t('Waiting blockchain confirm'), 'success');
-    
-    // 后台等待交易确认并保存记录
+    showToast('充值处理中，等待链上确认', 'success');
+
     provider.waitForTransaction(txHash, 1, 60000).then(async (receipt) => {
       if (receipt && receipt.status === 1) {
-        console.log('交易成功确认，区块:', receipt.blockNumber);
         await DB.rechargeRecord(currentUser.wallet, amount, txHash);
-        showToast(t('Recharge confirmed'), 'success');
-      } else {
-        console.error('交易确认失败');
+        showToast('充值已确认', 'success');
       }
-    }).catch(err => {
-      console.error('等待交易确认时出错:', err);
-    });
-    
+    }).catch(err => console.error(err));
   } catch (error) {
-    console.error('充值失败:', error);
-    if (error.code === 4001 || error.message?.includes('User rejected') || error.message?.includes('rejected')) {
-      showToast(t('Payment cancelled'), 'error');
-    } else {
-      showToast(t('Recharge failed') + (error.message?.substring(0, 80) || t('Unknown error')), 'error');
-    }
+    console.error('Recharge failed:', error);
+    if (error.code === 4001) showToast('已取消', 'error');
+    else showToast('充值失败: ' + (error.message || ''), 'error');
   }
 }
 async function doWithdraw(){
