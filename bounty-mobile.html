@@ -185,6 +185,13 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text
 .publish-option-btn{padding:1rem;background:var(--bg3);border:1px solid var(--card-border);border-radius:12px;color:var(--text);font-size:.85rem;font-weight:700;cursor:pointer;font-family:'Noto Sans SC',sans-serif;text-align:center}
 .publish-option-btn:active{border-color:var(--gold);background:rgba(245,166,35,.1)}
 .publish-option-icon{font-size:1.5rem;margin-bottom:.3rem}
+
+/* My tasks styles */
+.my-tasks-section{margin-top:1rem}
+.my-tasks-title{font-weight:900;font-size:1rem;margin-bottom:.8rem;color:var(--gold)}
+.my-tasks-grid{display:flex;flex-direction:column;gap:.6rem}
+.my-task-card{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:.8rem;cursor:pointer;transition:all .2s}
+.my-task-card:active{transform:scale(.98)}
 </style>
 </head>
 <body>
@@ -231,10 +238,84 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text
   </button>
 </nav>
 
-<button class="fab-publish" id="fabPublish" onclick="toggleFab()">+</button>
-<div class="fab-menu" id="fabMenu">
-  <button onclick="openPublishSocial()">📢 发布社交任务</button>
-  <button onclick="openPublishBounty()">🎁 发布特殊悬赏</button>
+<button class="fab-publish" id="fabPublish" onclick="openPublishModal()">+</button>
+
+<!-- Unified Publish Task Modal -->
+<div class="modal-overlay" id="publishModal">
+  <div class="modal" style="max-width:540px">
+    <button class="modal-close" onclick="closeModal('publishModal')">&times;</button>
+    <h2 id="pubTitle">发布任务</h2>
+    
+    <!-- Task Type Selector -->
+    <div class="task-type-selector" style="display:flex;gap:.5rem;margin-bottom:1rem">
+      <div class="task-type-option active" data-type="x-task" onclick="selectTaskType('x-task')" style="flex:1;background:var(--bg3);border:2px solid var(--card-border);border-radius:12px;padding:1rem;cursor:pointer;text-align:center">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:28px;height:28px;margin:0 auto .3rem"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        <div class="task-type-option-title" style="font-weight:800">X 任务</div>
+        <div class="task-type-option-desc" style="font-size:.75rem;color:var(--text-dim)">发布 X 平台任务</div>
+      </div>
+      <div class="task-type-option" data-type="other-task" onclick="selectTaskType('other-task')" style="flex:1;background:var(--bg3);border:2px solid var(--card-border);border-radius:12px;padding:1rem;cursor:pointer;text-align:center">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:28px;height:28px;margin:0 auto .3rem"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div class="task-type-option-title" style="font-weight:800">其他任务</div>
+        <div class="task-type-option-desc" style="font-size:.75rem;color:var(--text-dim)">发布其他类型任务</div>
+      </div>
+    </div>
+
+    <!-- X Task Form -->
+    <div id="xTaskForm">
+      <div class="form-group">
+        <label>任务描述</label>
+        <textarea id="pubXDesc" class="form-textarea" placeholder="描述你的任务内容..." maxlength="500" oninput="updateCharCount('x')"></textarea>
+        <div class="submission-char-count" id="xCharCount" style="font-size:.75rem;color:var(--text-dim);text-align:right;margin-top:.3rem">0/500</div>
+      </div>
+      <div class="form-group">
+        <label>任务链接</label>
+        <input type="url" id="pubXUrl" class="form-input" placeholder="https://x.com/user/status/123456...">
+      </div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <div class="form-group">
+          <label>参与人数</label>
+          <input type="number" id="pubXParticipants" class="form-input" placeholder="10" min="1" max="9999" oninput="calcTotalX()">
+        </div>
+        <div class="form-group">
+          <label>每人 NIAO</label>
+          <input type="number" id="pubXPerPerson" class="form-input" placeholder="50" min="1" oninput="calcTotalX()">
+        </div>
+      </div>
+      <div class="calc-total" style="padding:.8rem;background:var(--bg3);border-radius:10px;margin-bottom:1rem">
+        <span class="calc-label" style="font-size:.85rem;color:var(--text-dim)">任务总 NIAO</span>
+        <span class="calc-value" id="calcTotalXValue" style="font-family:Orbitron,monospace;font-weight:900;color:var(--gold);font-size:1.1rem;margin-left:.5rem">0 NIAO</span>
+      </div>
+      <button class="detail-action-btn btn-follow" onclick="doPublishXTask()">发布任务</button>
+    </div>
+
+    <!-- Other Task Form -->
+    <div id="otherTaskForm" style="display:none">
+      <div class="form-group">
+        <label>任务描述</label>
+        <textarea id="pubOtherDesc" class="form-textarea" placeholder="描述你的任务内容..." maxlength="500" oninput="updateCharCount('other')"></textarea>
+        <div class="submission-char-count" id="otherCharCount" style="font-size:.75rem;color:var(--text-dim);text-align:right;margin-top:.3rem">0/500</div>
+      </div>
+      <div class="form-group">
+        <label>任务链接 (可选)</label>
+        <input type="url" id="pubOtherUrl" class="form-input" placeholder="https://example.com...">
+      </div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <div class="form-group">
+          <label>参与人数</label>
+          <input type="number" id="pubOtherParticipants" class="form-input" placeholder="10" min="1" max="9999" oninput="calcTotalOther()">
+        </div>
+        <div class="form-group">
+          <label>每人 NIAO</label>
+          <input type="number" id="pubOtherPerPerson" class="form-input" placeholder="50" min="1" oninput="calcTotalOther()">
+        </div>
+      </div>
+      <div class="calc-total" style="padding:.8rem;background:var(--bg3);border-radius:10px;margin-bottom:1rem">
+        <span class="calc-label" style="font-size:.85rem;color:var(--text-dim)">任务总 NIAO</span>
+        <span class="calc-value" id="calcTotalOtherValue" style="font-family:Orbitron,monospace;font-weight:900;color:var(--gold);font-size:1.1rem;margin-left:.5rem">0 NIAO</span>
+      </div>
+      <button class="detail-action-btn btn-follow" onclick="doPublishOtherTask()">发布任务</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay task-detail-modal" id="taskDetailModal">
@@ -1200,9 +1281,22 @@ function showDashboardModal() {
         <button class="dash-action-btn dash-edit" onclick="openEditProfile()">编辑资料</button>
         <button class="dash-action-btn dash-logout" onclick="doLogout()">退出登录</button>
       </div>
+      
+      <!-- My Tasks Section -->
+      <div class="my-tasks-section" id="myTasksSection">
+        <div class="my-tasks-title">我发布的任务</div>
+        <div class="my-tasks-grid" id="myTasksGrid"></div>
+        <div class="empty-state" id="myTasksEmpty" style="padding:2rem;display:none">
+          <div class="empty-icon" style="font-size:2rem;margin-bottom:1rem;opacity:.4">&#128221;</div>
+          <p>你还没有发布过任务</p>
+        </div>
+      </div>
     </div>
   `;
   openModal('dashboardModal');
+  
+  // Render my tasks after modal opens
+  setTimeout(() => renderMyTasks(), 100);
 }
 
 async function claimPending() {
@@ -1441,6 +1535,194 @@ async function doWithdraw() {
 }
 
 /* Publish */
+function openPublishModal() {
+  if (!currentUser) { openModal('loginModal'); return; }
+  document.getElementById('pubXDesc').value = '';
+  document.getElementById('pubXUrl').value = '';
+  document.getElementById('pubXParticipants').value = '';
+  document.getElementById('pubXPerPerson').value = '';
+  document.getElementById('calcTotalXValue').textContent = '0 NIAO';
+  document.getElementById('xCharCount').textContent = '0/500';
+  
+  document.getElementById('pubOtherDesc').value = '';
+  document.getElementById('pubOtherUrl').value = '';
+  document.getElementById('pubOtherParticipants').value = '';
+  document.getElementById('pubOtherPerPerson').value = '';
+  document.getElementById('calcTotalOtherValue').textContent = '0 NIAO';
+  document.getElementById('otherCharCount').textContent = '0/500';
+  
+  selectTaskType('x-task');
+  openModal('publishModal');
+}
+
+function selectTaskType(type) {
+  document.querySelectorAll('.task-type-option').forEach(option => {
+    option.classList.remove('active');
+    option.style.borderColor = 'var(--card-border)';
+  });
+  const selected = document.querySelector(`[data-type="${type}"]`);
+  if (selected) {
+    selected.classList.add('active');
+    selected.style.borderColor = 'var(--gold)';
+  }
+  
+  if (type === 'x-task') {
+    document.getElementById('xTaskForm').style.display = 'block';
+    document.getElementById('otherTaskForm').style.display = 'none';
+  } else {
+    document.getElementById('xTaskForm').style.display = 'none';
+    document.getElementById('otherTaskForm').style.display = 'block';
+  }
+}
+
+function updateCharCount(type) {
+  const charCountEl = document.getElementById(type + 'CharCount');
+  const textarea = document.getElementById('pub' + type.charAt(0).toUpperCase() + type.slice(1) + 'Desc');
+  if (charCountEl && textarea) {
+    charCountEl.textContent = textarea.value.length + '/500';
+  }
+}
+
+function calcTotalX() {
+  const participants = parseInt(document.getElementById('pubXParticipants').value) || 0;
+  const niaoPerPerson = parseInt(document.getElementById('pubXPerPerson').value) || 0;
+  const total = participants * niaoPerPerson;
+  document.getElementById('calcTotalXValue').textContent = formatNiaoAmount(total);
+}
+
+function calcTotalOther() {
+  const participants = parseInt(document.getElementById('pubOtherParticipants').value) || 0;
+  const niaoPerPerson = parseInt(document.getElementById('pubOtherPerPerson').value) || 0;
+  const total = participants * niaoPerPerson;
+  document.getElementById('calcTotalOtherValue').textContent = formatNiaoAmount(total);
+}
+
+async function doPublishXTask() {
+  if (!currentUser) return;
+  const desc = (document.getElementById('pubXDesc').value || '').trim();
+  const url = (document.getElementById('pubXUrl').value || '').trim();
+  const participants = parseInt(document.getElementById('pubXParticipants').value) || 0;
+  const niaoPerPerson = parseInt(document.getElementById('pubXPerPerson').value) || 0;
+  
+  if (!desc) { showToast('请输入任务描述', 'error'); return; }
+  if (!url) { showToast('请输入任务链接', 'error'); return; }
+  if (participants < 1) { showToast('请输入参与人数', 'error'); return; }
+  if (niaoPerPerson < 1) { showToast('请输入单人奖励', 'error'); return; }
+  
+  const total = participants * niaoPerPerson;
+  if ((currentUser.balance || 0) < total) { showToast('NIAO余额不足', 'error'); return; }
+  
+  if (!consumeMobileBalance(total)) { showToast('NIAO余额不足', 'error'); return; }
+  
+  try {
+    const taskId = await DB.createTask({
+      type: 'x-task',
+      title: 'X 平台任务',
+      desc: desc,
+      url: url,
+      participants: participants,
+      niaoPerPerson: niaoPerPerson,
+      accepted: 0,
+      publisher: {
+        wallet: currentUser.wallet,
+        nick: currentUser.nick,
+        avatar: currentUser.avatar
+      },
+      status: 'open',
+      createdAt: Date.now()
+    });
+    
+    await DB.saveUser(currentUser);
+    localStorage.setItem('cachedUser', JSON.stringify(currentUser));
+    closeModal('publishModal');
+    showToast('任务发布成功！', 'success');
+    renderTasks();
+  } catch (err) {
+    console.error(err);
+    showToast('发布失败: ' + (err.message || ''), 'error');
+  }
+}
+
+async function doPublishOtherTask() {
+  if (!currentUser) return;
+  const desc = (document.getElementById('pubOtherDesc').value || '').trim();
+  const url = (document.getElementById('pubOtherUrl').value || '').trim();
+  const participants = parseInt(document.getElementById('pubOtherParticipants').value) || 0;
+  const niaoPerPerson = parseInt(document.getElementById('pubOtherPerPerson').value) || 0;
+  
+  if (!desc) { showToast('请输入任务描述', 'error'); return; }
+  if (participants < 1) { showToast('请输入参与人数', 'error'); return; }
+  if (niaoPerPerson < 1) { showToast('请输入单人奖励', 'error'); return; }
+  
+  const total = participants * niaoPerPerson;
+  if ((currentUser.balance || 0) < total) { showToast('NIAO余额不足', 'error'); return; }
+  
+  if (!consumeMobileBalance(total)) { showToast('NIAO余额不足', 'error'); return; }
+  
+  try {
+    const taskId = await DB.createTask({
+      type: 'other-task',
+      title: '其他任务',
+      desc: desc,
+      url: url,
+      participants: participants,
+      niaoPerPerson: niaoPerPerson,
+      accepted: 0,
+      publisher: {
+        wallet: currentUser.wallet,
+        nick: currentUser.nick,
+        avatar: currentUser.avatar
+      },
+      status: 'open',
+      createdAt: Date.now()
+    });
+    
+    await DB.saveUser(currentUser);
+    localStorage.setItem('cachedUser', JSON.stringify(currentUser));
+    closeModal('publishModal');
+    showToast('任务发布成功！', 'success');
+    renderTasks();
+  } catch (err) {
+    console.error(err);
+    showToast('发布失败: ' + (err.message || ''), 'error');
+  }
+}
+
+function renderMyTasks() {
+  const myTasks = allTasks.filter(t => t.publisher && t.publisher.wallet === currentUser.wallet);
+  const grid = document.getElementById('myTasksGrid');
+  const empty = document.getElementById('myTasksEmpty');
+  
+  if (!grid) return;
+  
+  if (myTasks.length === 0) {
+    grid.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  
+  if (empty) empty.style.display = 'none';
+  
+  grid.innerHTML = myTasks.map(t => {
+    const taskIcon = t.type === 'x-task' ? '🐦' : '📋';
+    const taskType = t.type === 'x-task' ? 'X 任务' : '其他任务';
+    return `
+      <div class="my-task-card" onclick="openTaskDetail('${t.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+          <div style="font-weight:800;color:var(--gold)">${taskIcon} ${taskType}</div>
+          <div style="font-size:.75rem;color:var(--text-dim)">${getTimeAgo(t.createdAt)}</div>
+        </div>
+        <div style="font-weight:800;margin-bottom:.5rem">${esc(t.title || taskType)}</div>
+        <div style="font-size:.85rem;color:var(--text-dim);margin-bottom:.5rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(t.desc)}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:.8rem">
+          <span>参与人数: ${t.accepted}/${t.participants}</span>
+          <span style="color:var(--gold)">${formatNiaoAmount(t.niaoPerPerson)}/人</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 function openPublishSocial() {
   if (!currentUser) { openModal('loginModal'); return; }
   document.getElementById('pubSocialDesc').value = '';
