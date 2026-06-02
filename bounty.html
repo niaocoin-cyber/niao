@@ -3136,37 +3136,64 @@ async function doBindX(){
   }
 
   try {
-    // 创建一个弹窗让用户输入X用户名（模拟授权）
+    // 创建一个更美观的弹窗让用户输入X用户名
     const modal = document.createElement('div');
-    modal.className = 'custom-modal-overlay';
+    modal.className = 'custom-modal';
     modal.innerHTML = `
-      <div class="custom-modal" style="background:var(--bg2);border:1px solid var(--card-border);border-radius:16px;padding:2rem;max-width:400px;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10001;text-align:center">
-        <h3 style="color:var(--gold);margin-bottom:1rem">绑定 X 账号</h3>
-        <p style="color:var(--text-dim);margin-bottom:1rem;font-size:.9rem">请输入您的 X (Twitter) 用户名</p>
-        <input type="text" id="xUsernameInput" placeholder="@username" style="width:100%;padding:.8rem;border:1px solid var(--card-border);border-radius:8px;background:var(--bg);color:var(--text);margin-bottom:1rem">
-        <div style="display:flex;gap:.5rem;justify-content:center">
-          <button onclick="cancelBindX()" style="padding:.6rem 1.2rem;border:1px solid var(--card-border);border-radius:8px;background:var(--bg);color:var(--text);cursor:pointer">取消</button>
-          <button onclick="confirmBindX()" style="padding:.6rem 1.2rem;border:none;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#000;font-weight:700;cursor:pointer">确认绑定</button>
+      <div class="custom-modal-overlay" onclick="closeCustomModal()"></div>
+      <div class="custom-modal-content" style="max-width:450px;">
+        <div class="custom-modal-header">
+          <div style="display:flex;align-items:center;gap:.8rem;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" style="color:var(--gold);">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+            <h3>${lang==='zh'?'绑定 X 账号':'Bind X Account'}</h3>
+          </div>
+          <button class="custom-modal-close" onclick="closeCustomModal()">&times;</button>
+        </div>
+        <div class="custom-modal-body">
+          <div style="text-align:center;margin-bottom:1.5rem;">
+            <div style="font-size:3rem;margin-bottom:.8rem;">🔗</div>
+            <p style="font-size:1rem;color:var(--text);margin-bottom:.4rem;">
+              ${lang==='zh'?'请输入您的 X (Twitter) 用户名':'Enter your X (Twitter) username'}
+            </p>
+            <p style="font-size:.85rem;color:var(--text-dim);">
+              ${lang==='zh'?'用于参与社交任务获取 NIAO 奖励':'For participating in social tasks to earn NIAO rewards'}
+            </p>
+          </div>
+          <div style="display:flex;align-items:center;gap:.6rem;background:var(--bg3);border:1px solid var(--card-border);border-radius:12px;padding:.6rem 1rem;transition:all .3s;" id="xInputWrapper">
+            <span style="color:var(--gold);font-size:1.2rem;font-weight:700;">@</span>
+            <input type="text" id="xUsernameInput" placeholder="${lang==='zh'?'username':'username'}" style="flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:1rem;padding:.4rem 0;">
+          </div>
+        </div>
+        <div class="custom-modal-footer">
+          <button class="custom-btn custom-btn-cancel" onclick="closeCustomModal()">${lang==='zh'?'取消':'Cancel'}</button>
+          <button class="custom-btn custom-btn-confirm" onclick="confirmBindX()">${lang==='zh'?'确认绑定':'Confirm Bind'}</button>
         </div>
       </div>
     `;
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000';
     document.body.appendChild(modal);
     
-    document.getElementById('xUsernameInput').focus();
+    // 聚焦输入框
+    const input = document.getElementById('xUsernameInput');
+    input.focus();
+    
+    // 输入框聚焦效果
+    input.addEventListener('focus', function() {
+      document.getElementById('xInputWrapper').style.borderColor = 'var(--gold)';
+      document.getElementById('xInputWrapper').style.boxShadow = '0 0 16px rgba(245,166,35,.2)';
+    });
+    input.addEventListener('blur', function() {
+      document.getElementById('xInputWrapper').style.borderColor = 'var(--card-border)';
+      document.getElementById('xInputWrapper').style.boxShadow = 'none';
+    });
     
     // 绑定全局函数
-    window.cancelBindX = function() {
-      modal.remove();
-      closeModal('bindXModal');
-    };
-    
     window.confirmBindX = async function() {
-      const input = document.getElementById('xUsernameInput');
       let username = input.value.trim();
       
       if(!username) {
-        showToast('请输入X用户名', 'error');
+        showToast(lang==='zh'?'请输入X用户名':'Please enter X username', 'error');
         return;
       }
       
@@ -3180,19 +3207,19 @@ async function doBindX(){
       await DB.saveUser(currentUser);
       
       // 关闭弹窗
-      modal.remove();
+      closeCustomModal();
       closeModal('bindXModal');
       
       // 更新UI
       renderUserArea();
       updateDashboard();
       
-      showToast('X 账号绑定成功！@' + username, 'success');
+      showToast(lang==='zh'?'X 账号绑定成功！@':'X account bound successfully! @' + username, 'success');
     };
 
   } catch (error) {
     console.error('绑定失败:', error);
-    showToast('绑定失败: ' + error.message, 'error');
+    showToast(lang==='zh'?'绑定失败: ':'Bind failed: ' + error.message, 'error');
   }
 }
 
