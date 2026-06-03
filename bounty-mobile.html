@@ -843,35 +843,6 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadTasks() {
   if (!firebaseInitialized) return;
   allTasks = await DB.getTasks();
-  try {
-    const stats = await DB.getWelcomeBonusStats();
-    const totalNiao = 10000000000000;
-    const niaoPerPerson = 1000000000;
-    const totalClaimed = (stats.totalClaimed || 0) * niaoPerPerson;
-    const isFullyClaimed = totalClaimed >= totalNiao;
-    
-    const welcomeBonus = {
-      id: 'welcome-bonus',
-      type: 'bounty',
-      title: lang === 'zh' ? '万亿NIAO币大放送' : 'Trillion NIAO Giveaway',
-      desc: lang === 'zh' ? '欢迎来到NIAO社区！点击下方按钮领取10亿枚NIAO币（不可提现，可用于发布任务）' : 'Welcome to NIAO Community! Click the button below to claim 1 billion NIAO (non-withdrawable, can be used to publish tasks)',
-      niaoPerPerson: niaoPerPerson,
-      totalNiao: totalNiao,
-      accepted: stats.totalClaimed || 0,
-      participants: 1000000,
-      createdAt: Date.now() - 86400000,
-      publisher: {
-        wallet: 'system',
-        nick: 'NIAO官方',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=system'
-      },
-      isWelcomeBonus: true,
-      isFullyClaimed: isFullyClaimed
-    };
-    allTasks.unshift(welcomeBonus);
-  } catch (e) {
-    console.error('Failed to load welcome bonus:', e);
-  }
   renderTasks();
 }
 
@@ -888,43 +859,12 @@ function renderTasks() {
 }
 
 function renderTaskCard(t) {
-  const isWelcomeBonus = t.isWelcomeBonus || t.id === 'welcome-bonus';
-  const isBounty = t.type === 'bounty' || isWelcomeBonus;
+  const isBounty = t.type === 'bounty';
   const reward = t.niaoPerPerson || t.reward || 0;
   const accepted = (t.accepted || 0);
   const maxAccepted = t.maxAccepted || t.participants || 999;
   const isFull = accepted >= maxAccepted;
   const tags = [];
-  
-  // 欢迎奖励特殊处理
-  if (isWelcomeBonus) {
-    const claimed = currentUser?.hasClaimedWelcomeBonus;
-    const claimedNiao = accepted * 1000000000;
-    const fullyClaimed = claimedNiao >= 10000000000000;
-    
-    return `
-      <div class="task-card bounty-special" onclick="openTaskDetail('${t.id}')">
-        <div class="bounty-badge">⭐ 欢迎奖励</div>
-        <div class="task-card-header">
-          <div class="task-title">${esc(t.title)}</div>
-          <div class="task-reward">10亿<span class="coin">NIAO</span></div>
-        </div>
-        <div class="task-action-tags"><span class="task-action-tag tag-follow">奖励</span></div>
-        <div class="task-meta">
-          <span>💰 已领取 ${formatNiaoAmount(claimedNiao)}</span>
-          <span>🕐 ${fullyClaimed ? '已领完' : '进行中'}</span>
-        </div>
-        <div class="task-desc">${esc(t.desc || '')}</div>
-        <div class="task-footer">
-          <div class="task-publisher">
-            <img src="${esc((t.publisher && t.publisher.avatar) || 'https://api.dicebear.com/7.x/bottts/svg?seed=system')}" alt="">
-            <span>${esc((t.publisher && t.publisher.nick) || 'NIAO官方')}</span>
-          </div>
-          <span class="task-status ${claimed || fullyClaimed ? 'status-full' : 'status-open'}">${fullyClaimed ? '已领完' : (claimed ? '已领取' : '立即领取')}</span>
-        </div>
-      </div>
-    `;
-  }
   
   if (t.actionType) {
     if (t.actionType.follow) tags.push('<span class="task-action-tag tag-follow">关注</span>');

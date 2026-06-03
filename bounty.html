@@ -2269,43 +2269,8 @@ let welcomeBonusStats={ totalClaimed:0 };
 async function renderTasks(){
   const g=document.getElementById('taskGrid'),e=document.getElementById('emptyTasks');
   
-  // 获取欢迎奖励统计
-  try {
-    welcomeBonusStats=await DB.getWelcomeBonusStats();
-  }catch(e){console.error('获取奖励统计失败',e);}
-  
-  // 构建任务列表，先添加内置悬赏贴
-  let tasksToRender = [];
-  
-  // 添加内置欢迎悬赏贴
-  const hasClaimedBonus = currentUser?.hasClaimedWelcomeBonus;
-  const totalNiao=10000000000000;
-  const niaoPerPerson=1000000000;
-  const totalClaimed=(welcomeBonusStats.totalClaimed||0)*niaoPerPerson;
-  const isFullyClaimed=totalClaimed>=totalNiao;
-  
-  const welcomeBonus = {
-    id: 'welcome-bonus',
-    type: 'bounty',
-    title: lang==='zh'?'万亿NIAO币大放送':'Trillion NIAO Giveaway',
-    desc: lang==='zh'?'欢迎来到NIAO社区！点击下方按钮领取10亿枚NIAO币（不可提现，可用于发布任务）':'Welcome to NIAO Community! Click the button below to claim 1 billion NIAO (non-withdrawable, can be used to publish tasks)',
-    niaoPerPerson: niaoPerPerson,
-    totalNiao: totalNiao,
-    accepted: welcomeBonusStats.totalClaimed||0,
-    participants: 1000000,
-    createdAt: Date.now(),
-    publisher: {
-      wallet: 'system',
-      nick: 'NIAO官方',
-      avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=system'
-    },
-    isWelcomeBonus: true,
-    isFullyClaimed: isFullyClaimed
-  };
-  tasksToRender.push(welcomeBonus);
-  
-  // 添加其他任务
-  tasksToRender = tasksToRender.concat(allTasks);
+  // 构建任务列表
+  let tasksToRender = allTasks;
   
   if(!tasksToRender.length){g.innerHTML='';e.style.display='block';return}
   e.style.display='none';
@@ -2318,25 +2283,6 @@ async function renderTasks(){
   const cls={like:'tag-like',comment:'tag-comment',retweet:'tag-retweet',follow:'tag-follow'};
   g.innerHTML=tasksToRender.map(task=>{
     const full=task.accepted>=task.participants;
-    
-    if(task.isWelcomeBonus) {
-      const claimed = currentUser?.hasClaimedWelcomeBonus;
-      const claimedNiao=(welcomeBonusStats.totalClaimed||0)*1000000000;
-      const remaining=Math.max(0,10000000000000-claimedNiao);
-      const fullyClaimed=claimedNiao>=10000000000000;
-      
-      return`<div class="task-card bounty-special" onclick="openTaskDetail('${task.id}')">
-        <div class="bounty-badge">&#127942; ${t('Welcome Bonus')}</div>
-        <div class="task-header"><div class="task-title">${esc(task.title)}</div><div class="task-reward">10亿<span class="coin">NIAO</span></div></div>
-        <div class="task-action-tags"><span class="task-action-tag tag-follow">${t('Reward')}</span></div>
-        <div class="task-meta"><span>&#128176; ${t('Claimed')} ${formatNiaoAmount(claimedNiao)}</span><span>&#128338; ${fullyClaimed?t('Fully claimed'):t('In Progress')}</span></div>
-        <div class="task-desc">${esc(task.desc)}</div>
-        <div class="task-footer">
-          <div class="task-publisher"><img src="${task.publisher.avatar}">${esc(task.publisher.nick)}</div>
-          <span class="task-status ${claimed||fullyClaimed?'status-full':'status-open'}">${fullyClaimed?t('Fully claimed'):(claimed?t('Claimed already'):t('Get Now'))}</span>
-        </div>
-      </div>`;
-    }
     
     // 新任务类型处理
     if(task.type==='x-task'||task.type==='other-task'){
@@ -2392,95 +2338,12 @@ function formatNiaoAmount(amount) {
 
 /* ── TASK DETAIL ── */
 async function openTaskDetail(taskId){
-  let t;
-  let isWelcomeBonus = false;
-  
-  // 检查是否是欢迎奖励任务
-  if(taskId === 'welcome-bonus') {
-    // 获取最新统计
-    try {
-      welcomeBonusStats=await DB.getWelcomeBonusStats();
-    }catch(e){console.error('获取奖励统计失败',e);}
-    
-    const claimedNiao=(welcomeBonusStats.totalClaimed||0)*1000000000;
-    const fullyClaimed=claimedNiao>=10000000000000;
-    
-    t = {
-      id: 'welcome-bonus',
-      type: 'bounty',
-      title: lang==='zh'?'万亿NIAO币大放送':'Trillion NIAO Giveaway',
-      desc: lang==='zh'?'欢迎来到NIAO社区！点击下方按钮领取10亿枚NIAO币（不可提现，可用于发布任务）':'Welcome to NIAO Community! Click the button below to claim 1 billion NIAO (non-withdrawable, can be used to publish tasks)',
-      niaoPerPerson: 1000000000,
-      totalNiao: 10000000000000,
-      accepted: welcomeBonusStats.totalClaimed||0,
-      participants: 1000000,
-      createdAt: Date.now(),
-      publisher: {
-        wallet: 'system',
-        nick: 'NIAO官方',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=system'
-      },
-      isWelcomeBonus: true,
-      isFullyClaimed: fullyClaimed
-    };
-    isWelcomeBonus = true;
-  } else {
-    t = allTasks.find(x=>x.id===taskId);
-    if(!t)return;
-  }
+  const t = allTasks.find(x=>x.id===taskId);
+  if(!t)return;
   
   const comps=await DB.getCompletions(currentUser?.wallet),uk=currentUser?.wallet,ck=(uk&&comps?.[uk])?.[taskId]||{};
   const full=t.accepted>=t.participants,isOwn=currentUser&&t.publisher.wallet===currentUser.wallet;
   let h='';
-  
-  if(isWelcomeBonus) {
-    const claimedNiao=(welcomeBonusStats.totalClaimed||0)*1000000000;
-    const fullyClaimed=claimedNiao>=10000000000000;
-    
-    h+=`<div class="bounty-badge">&#127942; ${t('Welcome Bonus')}</div>`;
-    h+=`<h2 style="margin-top:.5rem">${esc(t.title)}</h2>`;
-    h+=`<div class="detail-info-row"><span>&#128176; 10亿 NIAO/人</span><span>&#128176; ${t('Claimed')} ${formatNiaoAmount(claimedNiao)}</span></div>`;
-    h+=`<div class="detail-desc">${esc(t.desc)}</div>`;
-    
-    if(currentUser) {
-      const hasClaimed = currentUser.hasClaimedWelcomeBonus;
-      if(hasClaimed) {
-        h+=`<div class="completion-status completion-done">&#10003; ${t('You have already claimed')}</div>`;
-      } else if(fullyClaimed) {
-        h+=`<div class="completion-status completion-done">&#10060; ${t('Reward is fully claimed')}</div>`;
-      } else {
-        h+=`<div class="detail-actions">
-          <button id="welcomeBonusClaimBtn" class="detail-action-btn btn-follow" style="font-size:1.1rem;padding:1rem 2rem;background:var(--green);color:#000">
-            &#128184; ${t('Get Now')} 10亿枚NIAO
-          </button>
-        </div>`;
-      }
-    } else {
-      h+=`<div class="completion-status completion-pending">${t('Please login first')}</div>`;
-    }
-    
-    // 添加回复区域
-    h+=`<div id="bountyRepliesSection" style="margin-top:1rem"><div style="font-weight:700;margin-bottom:.5rem;font-size:.9rem">${t('Player Replies')}</div><div id="bountyRepliesList"></div>`;
-    if(currentUser)h+=`<div class="reply-input-area" style="margin-top:.8rem;display:flex;gap:.5rem"><input type="text" id="bountyReplyInput" placeholder="${t('Write your reply...')}" style="flex:1;background:var(--bg3);border:1px solid var(--card-border);border-radius:8px;padding:.6rem;color:var(--text);font-size:.85rem" onkeypress="if(event.key==='Enter')submitBountyReply('${t.id}')"><button onclick="submitBountyReply('${t.id}')" style="background:var(--gold);color:#000;border:none;padding:.6rem 1rem;border-radius:8px;font-weight:700;cursor:pointer">${t('Send')}</button></div>`;
-    h+=`</div>`;
-    
-    h+=`<div style="margin-top:1.2rem;padding-top:.8rem;border-top:1px solid var(--card-border);display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--text-dim)"><img src="${t.publisher.avatar}" style="width:24px;height:24px;border-radius:50%;border:1px solid var(--card-border)">${t('Publisher')}: ${esc(t.publisher.nick)}</div>`;
-    document.getElementById('taskDetailContent').innerHTML=h;
-    openModal('taskDetailModal');
-    
-    // 使用 addEventListener 绑定欢迎奖励领取按钮事件
-    const claimBtn = document.getElementById('welcomeBonusClaimBtn');
-    if (claimBtn) {
-      claimBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        claimWelcomeBonus(e);
-      });
-    }
-    
-    // 加载回复
-    loadBountyReplies(taskId);
-    return;
-  }
   
   // 新任务类型处理
   if(t.type==='x-task'||t.type==='other-task'){
