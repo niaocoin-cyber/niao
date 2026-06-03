@@ -363,11 +363,15 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text
   <div class="modal center-modal">
     <button class="modal-close" onclick="closeModal('bindXModal')">&times;</button>
     <h2>绑定 X 账号</h2>
-    <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:1rem">授权后即可参与社交任务</p>
-    <button class="wallet-connect-btn" onclick="doBindX()">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-      授权绑定 X 账号
-    </button>
+    <div style="text-align:center;margin:1.5rem 0">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" style="color:var(--gold)"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+    </div>
+    <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:1rem;text-align:center">请输入您的 X (Twitter) 用户名</p>
+    <div style="display:flex;align-items:center;gap:.5rem;background:var(--bg3);border:1px solid var(--card-border);border-radius:10px;padding:.6rem .8rem;margin-bottom:1rem">
+      <span style="color:var(--gold);font-size:1.1rem;font-weight:700">@</span>
+      <input type="text" id="xUsernameInput" placeholder="username" style="flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:.95rem">
+    </div>
+    <button class="detail-action-btn btn-follow" onclick="confirmBindX()">确认绑定</button>
   </div>
 </div>
 
@@ -543,7 +547,9 @@ try {
       }
       localStorage.setItem('cachedUser', JSON.stringify(currentUser));
       updateUserBtn();
+      closeModal('loginModal');
       renderTasks();
+      showToast('登录成功！欢迎 ' + currentUser.nick, 'success');
     }
   });
 
@@ -839,22 +845,28 @@ async function loadTasks() {
   allTasks = await DB.getTasks();
   try {
     const stats = await DB.getWelcomeBonusStats();
+    const totalNiao = 10000000000000;
+    const niaoPerPerson = 1000000000;
+    const totalClaimed = (stats.totalClaimed || 0) * niaoPerPerson;
+    const isFullyClaimed = totalClaimed >= totalNiao;
+    
     const welcomeBonus = {
       id: 'welcome-bonus',
       type: 'bounty',
-      title: '万亿NIAO币大放送',
-      desc: '欢迎来到NIAO社区！点击下方按钮领取10亿枚NIAO币（不可提现，可用于发布任务）',
-      niaoPerPerson: 1000000000,
-      totalNiao: 10000000000000,
+      title: lang === 'zh' ? '万亿NIAO币大放送' : 'Trillion NIAO Giveaway',
+      desc: lang === 'zh' ? '欢迎来到NIAO社区！点击下方按钮领取10亿枚NIAO币（不可提现，可用于发布任务）' : 'Welcome to NIAO Community! Click the button below to claim 1 billion NIAO (non-withdrawable, can be used to publish tasks)',
+      niaoPerPerson: niaoPerPerson,
+      totalNiao: totalNiao,
       accepted: stats.totalClaimed || 0,
-      participants: 10000,
+      participants: 1000000,
       createdAt: Date.now() - 86400000,
       publisher: {
         wallet: 'system',
         nick: 'NIAO官方',
         avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=system'
       },
-      isWelcomeBonus: true
+      isWelcomeBonus: true,
+      isFullyClaimed: isFullyClaimed
     };
     allTasks.unshift(welcomeBonus);
   } catch (e) {
@@ -883,20 +895,50 @@ function renderTaskCard(t) {
   const maxAccepted = t.maxAccepted || t.participants || 999;
   const isFull = accepted >= maxAccepted;
   const tags = [];
+  
+  // 欢迎奖励特殊处理
+  if (isWelcomeBonus) {
+    const claimed = currentUser?.hasClaimedWelcomeBonus;
+    const claimedNiao = accepted * 1000000000;
+    const fullyClaimed = claimedNiao >= 10000000000000;
+    
+    return `
+      <div class="task-card bounty-special" onclick="openTaskDetail('${t.id}')">
+        <div class="bounty-badge">⭐ 欢迎奖励</div>
+        <div class="task-card-header">
+          <div class="task-title">${esc(t.title)}</div>
+          <div class="task-reward">10亿<span class="coin">NIAO</span></div>
+        </div>
+        <div class="task-action-tags"><span class="task-action-tag tag-follow">奖励</span></div>
+        <div class="task-meta">
+          <span>💰 已领取 ${formatNiaoAmount(claimedNiao)}</span>
+          <span>🕐 ${fullyClaimed ? '已领完' : '进行中'}</span>
+        </div>
+        <div class="task-desc">${esc(t.desc || '')}</div>
+        <div class="task-footer">
+          <div class="task-publisher">
+            <img src="${esc((t.publisher && t.publisher.avatar) || 'https://api.dicebear.com/7.x/bottts/svg?seed=system')}" alt="">
+            <span>${esc((t.publisher && t.publisher.nick) || 'NIAO官方')}</span>
+          </div>
+          <span class="task-status ${claimed || fullyClaimed ? 'status-full' : 'status-open'}">${fullyClaimed ? '已领完' : (claimed ? '已领取' : '立即领取')}</span>
+        </div>
+      </div>
+    `;
+  }
+  
   if (t.actionType) {
     if (t.actionType.follow) tags.push('<span class="task-action-tag tag-follow">关注</span>');
     if (t.actionType.like) tags.push('<span class="task-action-tag tag-like">点赞</span>');
     if (t.actionType.retweet) tags.push('<span class="task-action-tag tag-retweet">转发</span>');
   }
   let badgeText = '';
-  if (isWelcomeBonus) badgeText = '<div class="bounty-badge">⭐ 欢迎奖励</div>';
-  else if (isBounty) badgeText = '<div class="bounty-badge">⭐ 特殊悬赏</div>';
+  if (isBounty) badgeText = '<div class="bounty-badge">⭐ 特殊悬赏</div>';
   return `
     <div class="task-card ${isBounty ? 'bounty-special' : ''}" onclick="openTaskDetail('${t.id}')">
       ${badgeText}
       <div class="task-card-header">
         <div class="task-title">${esc(t.title || (t.desc || '').substring(0, 30) || '任务')}</div>
-        <div class="task-reward">${formatNiaoAmount(reward)}</div>
+        <div class="task-reward">${formatNiaoAmount(reward)}<span class="coin">/人</span></div>
       </div>
       ${tags.length ? '<div class="task-action-tags">' + tags.join('') + '</div>' : ''}
       <div class="task-meta">
@@ -1189,47 +1231,39 @@ async function doGoogleSignIn() {
   }
 }
 
-async function doBindX() {
+async function confirmBindX() {
   if (!currentUser) {
     showToast('请先登录', 'error');
     closeModal('bindXModal');
     openModal('loginModal');
     return;
   }
-  try {
-    const apiBase = window.location.protocol + '//' + window.location.host;
-    const response = await fetch(apiBase + '/api/auth/twitter', { method: 'GET', credentials: 'include' });
-    if (!response.ok) throw new Error('Failed to get auth URL');
-    const { redirectUrl } = await response.json();
-    const width = Math.min(600, window.innerWidth);
-    const height = Math.min(700, window.innerHeight);
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-    const popup = window.open(redirectUrl, 'Twitter OAuth', `width=${width},height=${height},left=${left},top=${top},popup=yes`);
-    if (!popup || popup.closed) {
-      showToast('正在跳转 X 授权...', 'info');
-      window.location.href = redirectUrl;
-      return;
-    }
-    showToast('请在弹出窗口中完成授权...', 'info');
-    const pollTimer = setInterval(async () => {
-      try {
-        if (popup.closed) {
-          clearInterval(pollTimer);
-          const freshUser = await DB.getUser(currentUser.wallet);
-          if (freshUser?.xAccount) {
-            currentUser.xAccount = freshUser.xAccount;
-          }
-          localStorage.setItem('cachedUser', JSON.stringify(currentUser));
-          showToast('X 账号绑定成功！', 'success');
-          closeModal('bindXModal');
-        }
-      } catch {}
-    }, 1000);
-  } catch (e) {
-    console.error('Bind X error:', e);
-    showToast('X 授权失败: ' + e.message, 'error');
+  
+  let username = (document.getElementById('xUsernameInput').value || '').trim();
+  
+  if (!username) {
+    showToast('请输入X用户名', 'error');
+    return;
   }
+  
+  // 去掉开头的@
+  if (username.startsWith('@')) {
+    username = username.substring(1);
+  }
+  
+  // 保存用户名
+  currentUser.xAccount = username;
+  await DB.saveUser(currentUser);
+  localStorage.setItem('cachedUser', JSON.stringify(currentUser));
+  
+  closeModal('bindXModal');
+  showToast('X 账号绑定成功！@' + username, 'success');
+  
+  // 更新个人中心显示
+  if (document.getElementById('dashboardModal').classList.contains('show')) {
+    showDashboardModal();
+  }
+  updateUserBtn();
 }
 
 function openBindX() {
